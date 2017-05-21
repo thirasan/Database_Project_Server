@@ -100,11 +100,29 @@ app.post('/app', jsonParser, function (req, res) {
     } 
 })
 
-app.get('/digital', jsonParser, function (req, res) {
-    name = req.body.firstName;
-    console.log(name);
-    console.log("sure");
-    var query = mysql_conn.query('SELECT * FROM digitalmedia', function(err, result){
+app.post('/digital', jsonParser, function (req, res) {
+    text = req.body.text;
+    text = `'%`+text+`%'`;
+    year = req.body.year;
+    yearState = req.body.yearState;
+    runtime = req.body.runtime;
+    runtimeState = req.body.runtimeState;
+    
+    SELECT = 'SELECT * FROM DigitalMedia ';
+    WHERE = 'WHERE (DigitalMedia.MediaName LIKE '+text+' OR DigitalMedia.Director LIKE ' + text +') ';
+    if (yearState == ">=") {
+        WHERE+='AND DigitalMedia.Year >= "'+year+'" ';
+    } else if (yearState == "<="){
+        WHERE+='AND DigitalMedia.Year <= "'+year+'" ';
+    }
+    
+
+    if (runtimeState == ">=") {
+        WHERE+='AND DigitalMedia.runtime >= "' +runtime+'" ';
+    } else if (runtimeState == "<="){
+        WHERE += 'AND DigitalMedia.runtime <= "' +runtime+ '" ';
+    }
+    var query = mysql_conn.query(SELECT + WHERE + "", function(err, result){
         table = result;
         res.json(result);
     });
@@ -154,6 +172,139 @@ app.get('/book/:name', jsonParser, (req ,res) => {
     function processRow(row,callback){
         callback();
     }
+})
+
+app.get('/author/:name', jsonParser, (req ,res) => {
+    const id = req.params.name;
+    var query = mysql_conn.query('SELECT * FROM author WHERE author_ID="' + id + '"', function(err, result){
+        table = result;
+        res.json(result);
+    });
+    query
+    .on('error', function(err) {
+        // Handle error, an 'end' event will be emitted after this as well
+    })
+    .on('result', function(row) {
+        // Pausing the connnection is useful if your processing involves I/O
+        mysql_conn.pause();
+        
+        processRow(row, function() {
+        mysql_conn.resume();
+        });
+    })
+    .on('end', function() {
+        // all rows have been received
+        console.log('end after mysql');
+    });
+    function processRow(row,callback){
+        callback();
+    }
+})
+
+app.get('/digitalMedia/:name', jsonParser, (req ,res) => {
+    const name = req.params.name
+    var query = mysql_conn.query('SELECT * FROM DigitalMedia WHERE Media_ID="' + name + '"', function(err, result){
+        table = result;
+        res.json(result);
+    });
+    query
+    .on('error', function(err) {
+        // Handle error, an 'end' event will be emitted after this as well
+    })
+    .on('result', function(row) {
+        // Pausing the connnection is useful if your processing involves I/O
+        mysql_conn.pause();
+        
+        processRow(row, function() {
+        mysql_conn.resume();
+        });
+    })
+    .on('end', function() {
+        // all rows have been received
+        console.log('end after mysql');
+    });
+    function processRow(row,callback){
+        callback();
+    }
+})
+
+app.post('/borrowDigitalMedia', jsonParser, (req ,res) => {
+    console.log(req.body.user);
+    console.log(req.body.mediaID);
+    var MBID = "MB";
+    var queryCount = mysql_conn.query('SELECT COUNT(MediaBorrowingBill_ID) AS "NumMedia" FROM DigitalMediaBorrowingBill ', function(err, result){
+        table = result;
+        res.json(result);
+    });
+    queryCount
+    .on('error', function(err) {
+        // Handle error, an 'end' event will be emitted after this as well
+    })
+    .on('result', function(row) {
+        // Pausing the connnection is useful if your processing involves I/O
+        mysql_conn.pause();
+        
+        processRow(row, function() {
+        mysql_conn.resume();
+        });
+    })
+    .on('end', function() {
+        // all rows have been received
+        if (table[0].NumMedia++ > 99)
+            MBID += table[0].NumMedia;
+        else if(table[0].NumMedia > 9)
+            MBID += "0" + table[0].NumMedia;
+        else 
+            MBID += "00" + table[0].NumMedia;
+
+        var date = new Date();
+        var year = date.getFullYear();
+        var month = date.getMonth() + 1;
+        month = (month < 10 ? "0" : "") + month;
+        var day  = date.getDate();
+        day = (day < 10 ? "0" : "") + day;
+        var borrowDate = day + "/" + month + "/" + year;
+        
+        var queryLibrarian = mysql_conn.query('SELECT Librarian_ID, COUNT(Librarian_ID) AS "NumLib" FROM DigitalMediaBorrowingBill GROUP BY Librarian_ID ORDER BY COUNT(Librarian_ID) ASC LIMIT 1', function(err, result){
+        librarian = result;});
+        queryLibrarian
+        .on('error', function(err) {
+            // Handle error, an 'end' event will be emitted after this as well
+        })
+        .on('result', function(row) {
+            // Pausing the connnection is useful if your processing involves I/O
+            mysql_conn.pause();
+            
+            processRow(row, function() {
+            mysql_conn.resume();
+            });
+        })
+        .on('end', function() {
+            // all rows have been received
+            var queryInsert = mysql_conn.query('INSERT INTO DigitalMediaBorrowingBill (MediaBorrowingBill_ID, BorrowDate, ReturnDate, Media_ID, Member_ID, Librarian_ID) VALUES ("'+ MBID+'", "'+ borrowDate+'", "", "' +req.body.mediaID+'", "'+req.body.user+'", "'+librarian[0].Librarian_ID +'") ', function(err, result){
+            });
+            queryInsert
+            .on('error', function(err) {
+                // Handle error, an 'end' event will be emitted after this as well
+            })
+            .on('result', function(row) {
+                // Pausing the connnection is useful if your processing involves I/O
+                mysql_conn.pause();
+                
+                processRow(row, function() {
+                mysql_conn.resume();
+                });
+            })
+            .on('end', function() {
+                // all rows have been received
+            });
+        });
+    
+    });
+    function processRow(row,callback){
+        callback();
+    }
+
 })
 
 app.get('/query/:code', jsonParser, (req ,res) => {
