@@ -30,11 +30,17 @@ app.post('/app', jsonParser, function (req, res) {
     text = `'%` +req.body.text + `%'`;
     award = `'%` + req.body.award + `%'`;
     pagecount = req.body.pagecount;
+    var gen = req.body.genres + '';
+    var genres = gen.split(',');
 
     SELECT = 'SELECT Book.Book_ID, Book.BookName, Book.PageCount, Author.AuthorName, BookAward.AwardName ';
     FROM = 'FROM book '
     JOIN = 'LEFT JOIN BookAwardRelation ON Book.Book_ID = BookAwardRelation.Book_ID LEFT JOIN BookAward ON BookAwardRelation.BookAward_ID = BookAward.BookAward_ID ';
     JOIN2 = 'LEFT JOIN Author ON book.author_ID = author.author_ID ';
+    JOIN3 = 'LEFT JOIN BookGenre ON Book.Book_ID = BookGenre.Book_ID ';
+    GROUP = 'GROUP BY Book.Book_ID ';
+    HAVING = ' ';
+    ORDER = 'ORDER BY Book.Book_ID'
     WHERE = 'WHERE (book.BookName LIKE ' + text +' OR Author.AuthorName LIKE ' + text +') ';
 
     if(req.body.award != '')
@@ -49,10 +55,27 @@ app.post('/app', jsonParser, function (req, res) {
     else
         PAGEFILTER = '';
 
-    ORDER = 'ORDER BY Book.Book_ID'
+    if (gen != '') {
+        WHERE += 'AND (';
+        for (var i = 0;i<genres.length-1;i++) {
+            WHERE += 'BookGenre.Genre = "'+ genres[i] + '"';
+            if (i<genres.length-2) WHERE += ' OR ';
+        }
+        WHERE += ') ';
+        HAVING = 'HAVING COUNT(Book.Book_ID) = '+ (genres.length-1) + ' ';
+    }
 
-    console.log(award);
-    var query = mysql_conn.query(''+ SELECT + FROM + JOIN + JOIN2 + WHERE + AWARDFILTER + PAGEFILTER + ORDER, function(err, result){
+    if (req.body.dateState == 'EQUALS') {
+        WHERE += 'AND Book.FirstPublished = "'+req.body.dateStr+'" ';
+    } else if (req.body.dateState == 'GREATER_THAN') {
+        WHERE += 'AND Book.FirstPublished > "'+req.body.dateStr+'" ';
+    } else if (req.body.dateState == 'LESS_THAN') {
+        WHERE += 'AND Book.FirstPublished < "'+req.body.dateStr+'" ';
+    } else if (req.body.dateState == 'BETWEEN'){
+        WHERE += 'AND Book.FirstPublished BETWEEN "'+req.body.dateStr+'" AND "' + req.body.betweenStr + '" ';
+    }
+
+    var query = mysql_conn.query(''+ SELECT + FROM + JOIN + JOIN2 + JOIN3 + WHERE + AWARDFILTER + PAGEFILTER + GROUP + HAVING + ORDER, function(err, result){
         table = result;
         res.json(result);
     });
