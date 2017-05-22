@@ -174,6 +174,32 @@ app.get('/bookAward/:id', jsonParser, (req ,res) => {
     }
 })
 
+app.get('/member', jsonParser, (req ,res) => {
+    var query = mysql_conn.query('SELECT * FROM member', function(err, result){
+        table = result;
+        res.json(result);
+    });
+    query
+    .on('error', function(err) {
+        // Handle error, an 'end' event will be emitted after this as well
+    })
+    .on('result', function(row) {
+        // Pausing the connnection is useful if your processing involves I/O
+        mysql_conn.pause();
+        
+        processRow(row, function() {
+        mysql_conn.resume();
+        });
+    })
+    .on('end', function() {
+        // all rows have been received
+        console.log('end after mysql');
+    });
+    function processRow(row,callback){
+        callback();
+    }
+})
+
 app.get('/book/:id', jsonParser, (req ,res) => {
     const ID = req.params.id
     var query = mysql_conn.query('SELECT Book.Book_ID, Book.BookName, Book.PageCount, Book.FirstPublished, BookGenre.Genre, author.author_ID, author.authorName FROM author, BookGenre, Book WHERE Book.Book_ID = BookGenre.Book_ID AND book.Author_ID = author.Author_ID AND book.book_ID ="'+ ID + '" ', function(err, result){
