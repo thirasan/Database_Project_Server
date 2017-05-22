@@ -147,9 +147,96 @@ app.post('/digital', jsonParser, function (req, res) {
     } 
 })
 
-app.get('/book/:name', jsonParser, (req ,res) => {
-    const name = req.params.name
-    var query = mysql_conn.query('SELECT * FROM book WHERE Book_ID="' + name + '"', function(err, result){
+app.get('/bookAward/:id', jsonParser, (req ,res) => {
+    const ID = req.params.id
+    var query = mysql_conn.query('SELECT Book.Book_ID, BookAward.AwardName, BookAwardRelation.Year FROM Book LEFT JOIN BookAwardRelation ON Book.Book_ID = bookawardrelation.Book_ID LEFT JOIN BookAward ON BookAwardRelation.BookAward_ID = BookAward.BookAward_ID WHERE book.book_ID ="'+ ID + '" ', function(err, result){
+        table = result;
+        res.json(result);
+    });
+    query
+    .on('error', function(err) {
+        // Handle error, an 'end' event will be emitted after this as well
+    })
+    .on('result', function(row) {
+        // Pausing the connnection is useful if your processing involves I/O
+        mysql_conn.pause();
+        
+        processRow(row, function() {
+        mysql_conn.resume();
+        });
+    })
+    .on('end', function() {
+        // all rows have been received
+        console.log('end after mysql');
+    });
+    function processRow(row,callback){
+        callback();
+    }
+})
+
+app.get('/book/:id', jsonParser, (req ,res) => {
+    const ID = req.params.id
+    var query = mysql_conn.query('SELECT Book.Book_ID, Book.BookName, Book.PageCount, Book.FirstPublished, BookGenre.Genre, author.author_ID, author.authorName FROM author, BookGenre, Book WHERE Book.Book_ID = BookGenre.Book_ID AND book.Author_ID = author.Author_ID AND book.book_ID ="'+ ID + '" ', function(err, result){
+        table = result;
+        res.json(result);
+    });
+    query
+    .on('error', function(err) {
+        // Handle error, an 'end' event will be emitted after this as well
+    })
+    .on('result', function(row) {
+        // Pausing the connnection is useful if your processing involves I/O
+        mysql_conn.pause();
+        
+        processRow(row, function() {
+        mysql_conn.resume();
+        });
+    })
+    .on('end', function() {
+        // all rows have been received
+        console.log('end after mysql');
+    });
+    function processRow(row,callback){
+        callback();
+    }
+})
+
+app.get('/userBook/:id', jsonParser, (req ,res) => {
+    const ID = req.params.id
+    SELECT = 'SELECT BookBorrowingBill.BookBorrowingBill_ID, BookBorrowingBill.BorrowDate, BookBorrowingBill.ReturnDate, Book.BookName, Member.MemberName, Librarian.LibrarianName ';
+    FROM = 'FROM BookBorrowingBill, Book, Member, Librarian ';
+    WHERE = 'WHERE BookBorrowingBill.ReturnDate = "" AND BookBorrowingBill.Book_ID = Book.Book_ID AND BookBorrowingBill.Member_ID = Member.Member_ID AND BookBorrowingBill.Librarian_ID = Librarian.Librarian_ID ';
+    var query = mysql_conn.query(SELECT + FROM + WHERE + "", function(err, result){
+        table = result;
+        res.json(result);
+    });
+    query
+    .on('error', function(err) {
+        // Handle error, an 'end' event will be emitted after this as well
+    })
+    .on('result', function(row) {
+        // Pausing the connnection is useful if your processing involves I/O
+        mysql_conn.pause();
+        
+        processRow(row, function() {
+        mysql_conn.resume();
+        });
+    })
+    .on('end', function() {
+        // all rows have been received
+        console.log('end after mysql');
+    });
+    function processRow(row,callback){
+        callback();
+    }
+})
+
+app.get('/userDigitalMedia/:id', jsonParser, (req ,res) => {
+    const ID = req.params.id
+    SELECT = 'SELECT DigitalMediaBorrowingBill.MediaBorrowingBill_ID, DigitalMediaBorrowingBill.BorrowDate, DigitalMediaBorrowingBill.ReturnDate, DigitalMedia.MediaName, Member.MemberName, Librarian.LibrarianName ';
+    FROM = 'FROM DigitalMediaBorrowingBill, DigitalMedia, Member, Librarian ';
+    WHERE = 'WHERE DigitalMediaBorrowingBill.ReturnDate = "" AND DigitalMediaBorrowingBill.Media_ID = DigitalMedia.Media_ID AND DigitalMediaBorrowingBill.Member_ID = Member.Member_ID AND DigitalMediaBorrowingBill.Librarian_ID = Librarian.Librarian_ID AND Member.Member_ID = "' + ID+'" ';
+    var query = mysql_conn.query(SELECT + FROM + WHERE + "", function(err, result){
         table = result;
         res.json(result);
     });
@@ -228,9 +315,153 @@ app.get('/digitalMedia/:name', jsonParser, (req ,res) => {
     }
 })
 
+app.get('/bookReturn/:id', jsonParser, (req ,res) => {
+    var reqID = (req.params.id);
+    var date = new Date();
+        var year = date.getFullYear();
+        var month = date.getMonth() + 1;
+        month = (month < 10 ? "0" : "") + month;
+        var day  = date.getDate();
+        day = (day < 10 ? "0" : "") + day;
+        var returnDate = day + "/" + month + "/" + year;
+    var query = mysql_conn.query('UPDATE BookBorrowingBill SET ReturnDate = "' + returnDate+'" WHERE BookBorrowingBill_ID = "' + reqID +'" ', function(err, result){
+        table = result;
+        res.json(result);
+    });
+    query
+    .on('error', function(err) {
+        // Handle error, an 'end' event will be emitted after this as well
+    })
+    .on('result', function(row) {
+        // Pausing the connnection is useful if your processing involves I/O
+        mysql_conn.pause();
+        
+        processRow(row, function() {
+        mysql_conn.resume();
+        });
+    })
+    .on('end', function() {
+        // all rows have been received
+        console.log('end after mysql');
+    });
+    function processRow(row,callback){
+        callback();
+    }
+})
+
+app.get('/digitalMediaReturn/:id', jsonParser, (req ,res) => {
+    var reqID = (req.params.id);
+    var date = new Date();
+        var year = date.getFullYear();
+        var month = date.getMonth() + 1;
+        month = (month < 10 ? "0" : "") + month;
+        var day  = date.getDate();
+        day = (day < 10 ? "0" : "") + day;
+        var returnDate = day + "/" + month + "/" + year;
+    var query = mysql_conn.query('UPDATE DigitalMediaBorrowingBill SET ReturnDate = "' + returnDate+'" WHERE MediaBorrowingBill_ID = "' + reqID +'" ', function(err, result){
+        table = result;
+        res.json(result);
+    });
+    query
+    .on('error', function(err) {
+        // Handle error, an 'end' event will be emitted after this as well
+    })
+    .on('result', function(row) {
+        // Pausing the connnection is useful if your processing involves I/O
+        mysql_conn.pause();
+        
+        processRow(row, function() {
+        mysql_conn.resume();
+        });
+    })
+    .on('end', function() {
+        // all rows have been received
+        console.log('end after mysql');
+    });
+    function processRow(row,callback){
+        callback();
+    }
+})
+
+app.post('/borrowBook', jsonParser, (req ,res) => {
+    console.log(req.body.user)
+    console.log(req.body.bookID)
+    var BBID = "BB";
+    var queryCount = mysql_conn.query('SELECT COUNT(BookBorrowingBill_ID) AS "NumBook" FROM BookBorrowingBill ', function(err, result){
+        table = result;
+        res.json(result);
+    });
+    queryCount
+    .on('error', function(err) {
+        // Handle error, an 'end' event will be emitted after this as well
+    })
+    .on('result', function(row) {
+        // Pausing the connnection is useful if your processing involves I/O
+        mysql_conn.pause();
+        
+        processRow(row, function() {
+        mysql_conn.resume();
+        });
+    })
+    .on('end', function() {
+        // all rows have been received
+        if (table[0].NumBook++ > 99)
+            BBID += table[0].NumMedia;
+        else if(table[0].NumBook > 9)
+            BBID += "0" + table[0].NumBook;
+        else 
+            BBID += "00" + table[0].NumBook;
+
+        var date = new Date();
+        var year = date.getFullYear();
+        var month = date.getMonth() + 1;
+        month = (month < 10 ? "0" : "") + month;
+        var day  = date.getDate();
+        day = (day < 10 ? "0" : "") + day;
+        var borrowDate = day + "/" + month + "/" + year;
+        
+        var queryLibrarian = mysql_conn.query('SELECT Librarian.Librarian_ID, COUNT(Librarian.Librarian_ID) AS "NumLib" FROM Librarian LEFT JOIN bookborrowingbill ON bookborrowingbill.Librarian_ID = Librarian.Librarian_ID GROUP BY Librarian_ID ORDER BY COUNT(Librarian.Librarian_ID), Librarian_ID LIMIT 1 ', function(err, result){
+        librarian = result;});
+        queryLibrarian
+        .on('error', function(err) {
+            // Handle error, an 'end' event will be emitted after this as well
+        })
+        .on('result', function(row) {
+            // Pausing the connnection is useful if your processing involves I/O
+            mysql_conn.pause();
+            
+            processRow(row, function() {
+            mysql_conn.resume();
+            });
+        })
+        .on('end', function() {
+            // all rows have been received
+            var queryInsert = mysql_conn.query('INSERT INTO BookBorrowingBill (BookBorrowingBill_ID, BorrowDate, ReturnDate, Book_ID, Member_ID, Librarian_ID) VALUES ("'+ BBID+'", "'+ borrowDate+'", "", "' +req.body.bookID+'", "'+req.body.user+'", "'+librarian[0].Librarian_ID +'") ', function(err, result){
+            });
+            queryInsert
+            .on('error', function(err) {
+                // Handle error, an 'end' event will be emitted after this as well
+            })
+            .on('result', function(row) {
+                // Pausing the connnection is useful if your processing involves I/O
+                mysql_conn.pause();
+                
+                processRow(row, function() {
+                mysql_conn.resume();
+                });
+            })
+            .on('end', function() {
+                // all rows have been received
+            });
+        });
+    
+    });
+    function processRow(row,callback){
+        callback();
+    }
+})
+
 app.post('/borrowDigitalMedia', jsonParser, (req ,res) => {
-    console.log(req.body.user);
-    console.log(req.body.mediaID);
     var MBID = "MB";
     var queryCount = mysql_conn.query('SELECT COUNT(MediaBorrowingBill_ID) AS "NumMedia" FROM DigitalMediaBorrowingBill ', function(err, result){
         table = result;
@@ -265,7 +496,7 @@ app.post('/borrowDigitalMedia', jsonParser, (req ,res) => {
         day = (day < 10 ? "0" : "") + day;
         var borrowDate = day + "/" + month + "/" + year;
         
-        var queryLibrarian = mysql_conn.query('SELECT Librarian_ID, COUNT(Librarian_ID) AS "NumLib" FROM DigitalMediaBorrowingBill GROUP BY Librarian_ID ORDER BY COUNT(Librarian_ID) ASC LIMIT 1', function(err, result){
+        var queryLibrarian = mysql_conn.query('SELECT Librarian.Librarian_ID, COUNT(Librarian.Librarian_ID) AS "NumLib" FROM Librarian LEFT JOIN digitalmediaborrowingbill ON digitalmediaborrowingbill.Librarian_ID = Librarian.Librarian_ID GROUP BY Librarian_ID ORDER BY COUNT(Librarian.Librarian_ID), Librarian_ID LIMIT 1 ', function(err, result){
         librarian = result;});
         queryLibrarian
         .on('error', function(err) {
