@@ -231,7 +231,7 @@ app.get('/userBook/:id', jsonParser, (req ,res) => {
     const ID = req.params.id
     SELECT = 'SELECT BookBorrowingBill.BookBorrowingBill_ID, BookBorrowingBill.BorrowDate, BookBorrowingBill.ReturnDate, Book.BookName, Member.MemberName, Librarian.LibrarianName ';
     FROM = 'FROM BookBorrowingBill, Book, Member, Librarian ';
-    WHERE = 'WHERE BookBorrowingBill.ReturnDate = "" AND BookBorrowingBill.Book_ID = Book.Book_ID AND BookBorrowingBill.Member_ID = Member.Member_ID AND BookBorrowingBill.Librarian_ID = Librarian.Librarian_ID ';
+    WHERE = 'WHERE BookBorrowingBill.ReturnDate = "" AND BookBorrowingBill.Book_ID = Book.Book_ID AND BookBorrowingBill.Member_ID = Member.Member_ID AND BookBorrowingBill.Librarian_ID = Librarian.Librarian_ID AND BookBorrowingBill.Member_ID = "' + ID + '" ';
     var query = mysql_conn.query(SELECT + FROM + WHERE + "", function(err, result){
         table = result;
         res.json(result);
